@@ -42,7 +42,7 @@
             </exclusions>
         </dependency>
 
-
+        <!-- flowable-modeler 核心 -->
         <dependency>
             <groupId>org.flowable</groupId>
             <artifactId>flowable-ui-modeler-conf</artifactId>
