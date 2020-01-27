@@ -8,5 +8,5 @@ spring:
   datasource:
     username: root
     password: root
-    url: jdbc:mysql://127.0.0.1:3306/flowable-modeler-demo?characterEncoding=UTF-8
+    url: jdbc:mysql://127.0.0.1:3306/flowable-modeler-demo?useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
     driver-class-name: com.mysql.jdbc.Driver
