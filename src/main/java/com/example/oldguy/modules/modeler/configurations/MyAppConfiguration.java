@@ -38,6 +38,7 @@ import org.springframework.web.servlet.DispatcherServlet;
         "org.flowable.ui.modeler.service",
         "org.flowable.ui.common.repository",
         "org.flowable.ui.common.tenant",
+
         "org.flowable.ui.modeler.rest.app",
         "org.flowable.ui.modeler.rest.api"
     }

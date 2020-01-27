@@ -20,10 +20,6 @@ public class RemoteAccountResource {
     @GetMapping("app/rest/account")
     public UserRepresentation getAccount() {
 
-        System.out.println();
-        System.out.println("getAuthentication:" + SecurityContextHolder.getContext().getAuthentication());
-        System.out.println();
-
         FlowableAppUser appUser = SecurityUtils.getCurrentFlowableAppUser();
         UserRepresentation userRepresentation = new UserRepresentation(appUser.getUserObject());
         if (appUser.getUserObject() instanceof RemoteUser) {
