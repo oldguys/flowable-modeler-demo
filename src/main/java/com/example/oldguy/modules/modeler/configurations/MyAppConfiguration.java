@@ -26,11 +26,6 @@ import org.springframework.web.context.support.AnnotationConfigWebApplicationCon
 import org.springframework.web.servlet.DispatcherServlet;
 
 
-@Import(
-        value = {
-                DatabaseConfiguration.class,
-        }
-)
 @Configuration
 @EnableConfigurationProperties(FlowableModelerAppProperties.class)
 @ComponentScan(basePackages = {

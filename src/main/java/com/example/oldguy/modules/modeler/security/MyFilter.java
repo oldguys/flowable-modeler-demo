@@ -53,6 +53,12 @@ public class MyFilter extends OncePerRequestFilter {
     }
 
     protected boolean skipAuthenticationCheck(HttpServletRequest request) {
+
+        if (request.getRequestURI().endsWith("/doc.html")){
+            LOGGER.info("swagger处理");
+            return false;
+        }
+
         return request.getRequestURI().endsWith(".css") ||
                 request.getRequestURI().endsWith(".js") ||
                 request.getRequestURI().endsWith(".html") ||

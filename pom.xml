@@ -17,6 +17,8 @@
     <properties>
         <java.version>1.8</java.version>
         <flowable-version>6.4.2</flowable-version>
+        <swagger.version>2.7.0</swagger.version>
+        <swagger-bootstrap-ui.version>1.9.4</swagger-bootstrap-ui.version>
     </properties>
 
     <dependencies>
@@ -69,6 +71,33 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.47</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>3.2.0</version>
+        </dependency>
+
+        <!-- swagger -->
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>${swagger.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>swagger-bootstrap-ui</artifactId>
+            <version>${swagger-bootstrap-ui.version}</version>
+        </dependency>
+
+        <!-- flowable 核心 -->
+
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter</artifactId>
+            <version>${flowable-version}</version>
         </dependency>
 
     </dependencies>
