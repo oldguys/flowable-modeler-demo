@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,43 +24,62 @@ public class MyRemoteServiceImpl implements RemoteIdmService {
 
     @Override
     public RemoteUser authenticateUser(String username, String password) {
-        LOGGER.debug("MyRemoteServiceImpl:authenticateUser");
+        LOGGER.warn("MyRemoteServiceImpl:authenticateUser");
         return null;
     }
 
     @Override
     public RemoteToken getToken(String tokenValue) {
-        LOGGER.debug("MyRemoteServiceImpl:getToken");
+        LOGGER.warn("MyRemoteServiceImpl:getToken");
         return null;
     }
 
     @Override
     public RemoteUser getUser(String userId) {
-        LOGGER.debug("MyRemoteServiceImpl:getUser");
+        LOGGER.warn("MyRemoteServiceImpl:getUser");
         return null;
     }
 
     @Override
     public List<RemoteUser> findUsersByNameFilter(String filter) {
-        LOGGER.debug("MyRemoteServiceImpl:findUsersByNameFilter");
+        LOGGER.warn("MyRemoteServiceImpl:findUsersByNameFilter");
         return null;
     }
 
     @Override
     public List<RemoteUser> findUsersByGroup(String groupId) {
-        LOGGER.debug("MyRemoteServiceImpl:findUsersByGroup");
+        LOGGER.warn("MyRemoteServiceImpl:findUsersByGroup");
         return null;
     }
 
+    /**
+     *  org.flowable.ui.modeler.rest.app.EditorGroupsResource#getGroups(java.lang.String)
+     *  url: http://localhost:8081/flowable-modeler-demo/app/rest/editor-groups
+
+     * @param groupId
+     * @return
+     */
     @Override
     public RemoteGroup getGroup(String groupId) {
-        LOGGER.debug("MyRemoteServiceImpl:getGroup");
-        return null;
+        LOGGER.warn("MyRemoteServiceImpl:getGroup");
+        return new RemoteGroup();
     }
 
+    /**
+     *  分配用户功能
+     *
+     *  http://localhost:8081/flowable-modeler-demo/app/rest/editor-groups
+     *  org.flowable.ui.modeler.rest.app.EditorGroupsResource#getGroups(java.lang.String)
+     * @param filter
+     * @return
+     */
     @Override
     public List<RemoteGroup> findGroupsByNameFilter(String filter) {
-        LOGGER.debug("MyRemoteServiceImpl:findGroupsByNameFilter");
-        return null;
+        LOGGER.warn("MyRemoteServiceImpl:findGroupsByNameFilter");
+
+        List<RemoteGroup> groups = new ArrayList<>();
+        groups.add(new RemoteGroup("01","组-01"));
+        groups.add(new RemoteGroup("02","组-02"));
+        return groups;
     }
 }
