@@ -18,3 +18,5 @@ spring:
 
 mybatis-plus:
   type-aliases-package: com.example.oldguy.modules.app.dao.entities
+
+
