@@ -3,14 +3,14 @@ logging:
     org.flowable.ui.modeler.rest.app: debug
 #    root: debug
 server:
-  port: 8081
+  port: 8088
   servlet:
     context-path: "/flowable-modeler-demo"
 spring:
   datasource:
     username: root
     password: root
-    url: jdbc:mysql://127.0.0.1:3306/flowable-modeler-demo2?useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
+    url: jdbc:mysql://127.0.0.1:3306/flowable-modeler-demo?useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
     driver-class-name: com.mysql.jdbc.Driver
   application:
     name: flowable-modeler-demo
@@ -20,3 +20,15 @@ mybatis-plus:
   type-aliases-package: com.example.oldguy.modules.app.dao.entities
 
 
+flowable:
+  app:
+    enabled: false
+  cmmn:
+    enabled: false
+  dmn:
+    enabled: false
+  form:
+    enabled: false
+  idm:
+    enabled: false
+  process-definition-location-prefix: "classpath*:/processes/rollback"
