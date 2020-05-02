@@ -1,58 +1,48 @@
-package com.example.oldguy.modules.examples.cmd.rollback.impl;
+> **场景**：本章主要描述 正在执行会签任务 如何进行回退操作。
+> ![会签任务进行回退操作](https://upload-images.jianshu.io/upload_images/14387783-0c5f38e0438ef5c4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+>
+> **上一章：**flowable 上一节点任务撤回-（2）会签任务（已完成）
+> **下一章：**flowable 上一节点任务撤回-（2）会签任务（已完成）
+>  
+> **环境**：
+>   springboot：2.2.0.RELEASE
+>   flowable：6.4.2
+>
+> git地址：[https://github.com/oldguys/flowable-modeler-demo/tree/branch_with_flowable_examples](https://github.com/oldguys/flowable-modeler-demo/tree/branch_with_flowable_examples)
+>
+> 所有章节：
+> 1. [flowable 上一节点任务撤回-（1）普通节点撤回](https://www.jianshu.com/p/ee42924ed029)
+> 2. [flowable 上一节点任务撤回-（2）会签任务（已完成）](https://www.jianshu.com/p/93fc02bb31d7)
+> 2. [flowable 上一节点任务撤回-（3）会签任务（正在执行中）](https://www.jianshu.com/p/6daf767b1084)
+> 2. [标题](链接地址)
+> 2. [标题](链接地址)
+> 2. [标题](链接地址)
 
-import com.example.oldguy.modules.examples.cmd.rollback.AbstractRollbackOperateStrategy;
-import com.example.oldguy.modules.examples.cmd.rollback.RollbackConstants;
-import com.example.oldguy.modules.examples.cmd.rollback.RollbackParamsTemplate;
-import com.example.oldguy.modules.examples.exceptions.FlowableRuntimeException;
-import lombok.extern.slf4j.Slf4j;
-import org.flowable.common.engine.impl.interceptor.CommandContext;
-import org.flowable.engine.impl.bpmn.behavior.MultiInstanceActivityBehavior;
-import org.flowable.engine.impl.bpmn.behavior.SequentialMultiInstanceBehavior;
-import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
-import org.flowable.engine.impl.util.CommandContextUtil;
-import org.flowable.task.api.Task;
-import org.flowable.task.api.history.HistoricTaskInstance;
-import org.flowable.task.service.impl.HistoricTaskInstanceQueryImpl;
-import org.flowable.task.service.impl.persistence.entity.HistoricTaskInstanceEntity;
-import org.flowable.task.service.impl.persistence.entity.TaskEntity;
-import org.flowable.variable.api.history.HistoricVariableInstance;
-import org.flowable.variable.service.impl.HistoricVariableInstanceQueryImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+#### 会签原理分析请参考上一章！
+ 
+ 1. 不同于 已完成任务， 正在执行任务会签任务回退不需要 考虑节点任务的跳转，所以不需要 对 历史任务 处理痕迹这些进行操作，只需要修改任务（execution依然存在）就行了。
+2. 但是在前一章的基础上，又出现了 手动添加 已完成execution的问题，（回退任务的execution已经被删掉）所以此处需要解决由上一章引出的 一种解决方案。
+根据 Execution 生命周期的问题，可以只作为判定是否需要 删除已完成任务 execution。
 
-/**
- * @ClassName: ActiveMultiInstanceTaskRollbackOperateStrategy
- * @Author: huangrenhao
- * @Description: 正在执行会签回滚 ，兼容嵌入式子流程
- * @CreateTime： 2020/3/31 0031 下午 3:36
- * @Version：
- **/
-@Slf4j
-public class ActiveMultiInstanceTaskRollbackOperateStrategy extends AbstractRollbackOperateStrategy {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(NextDefaultUserTaskRollbackOperateStrategy.class);
+> 步骤：
+> 1. 配置父级 execution 参数
+nrOfActiveInstances = 原本nrOfActiveInstances  +1
+nrOfCompletedInstances = 原本nrOfCompletedInstances - 1
+>
+> 2. 判定回退任务的 execution是否被删除掉，如果还存在，则直接修改 execution，对任务进行重新生成。如果 execution 已经被删除，即: 改流程已经到达下一个任务节点，已经进行过 回退，则需要删除 完成任务回退增加的 Execution（参考上一章）。
+>
+>注意使用      ：CommandContextUtil.getAgenda(commandContext).planContinueMultiInstanceOperation(newExecution, executionEntity, loopCounter);进行任务创建。
+>
+> 3. 如果是串行会签，则需要删除 下一完成任务，如果是并行，则忽略。
+>
 
-    public ActiveMultiInstanceTaskRollbackOperateStrategy(RollbackParamsTemplate paramsTemplate) {
-        super(paramsTemplate);
-    }
+####
 
-    boolean isSequential = false;
-
-    /**
-     * 会签任务 单个执行人 表达式
-     */
-    private String assigneeExpr = "assignee";
-
-    /**
-     * 会签任务 集合 表达式
-     */
-    private String assigneeListExpr = "assigneeList";
-
+##### 基于模板方法模式，构建编写通用 RollbackOperateStrategy.process() 操~作
+由于 正在执行 会签的特殊性，不需要维护边界节点的相关数据，所以这里在 实现策略类中，重写 process() 方法
+~~~
     @Override
     public void process(CommandContext commandContext, String assignee, Map<String, Object> variables) {
 
@@ -70,13 +60,10 @@ public class ActiveMultiInstanceTaskRollbackOperateStrategy extends AbstractRoll
         LOGGER.info("创建实例");
         createExecution();
     }
+~~~
 
-    @Override
-    public void setAssigneeExpr(String assigneeExpr, String assigneeListExpr) {
-        this.assigneeExpr = assigneeExpr;
-        this.assigneeListExpr = assigneeListExpr;
-    }
-
+##### 创建execution
+~~~
     @Override
     public void createExecution() {
 
@@ -103,8 +90,12 @@ public class ActiveMultiInstanceTaskRollbackOperateStrategy extends AbstractRoll
 
 
     }
+~~~
 
-    /**
+
+##### 处理串行会签 processSequentialInstance
+~~~
+ /**
      * 处理串行会签
      * 串行特殊场景 : 下一个顺序执行人已完成任务，当前历史任务不可回退
      * a -> b -> c -> d
@@ -188,26 +179,11 @@ public class ActiveMultiInstanceTaskRollbackOperateStrategy extends AbstractRoll
         removeHisTask(hisTask);
     }
 
-    public void existNextFinishedTask(HistoricTaskInstance hisTask) {
+~~~
 
-        List<HistoricTaskInstance> list = CommandContextUtil.getHistoricTaskService().findHistoricTaskInstancesByQueryCriteria(
-                (HistoricTaskInstanceQueryImpl) new HistoricTaskInstanceQueryImpl()
-                        .processInstanceId(hisTask.getProcessInstanceId())
-                        .taskDefinitionKey(hisTask.getTaskDefinitionKey())
-                        .finished()
-                        .taskCompletedAfter(hisTask.getEndTime())
-        );
-
-        if (!list.isEmpty()) {
-            String msg = "串行会签回滚，已经具有下一线性完成任务,无法进行任务回退";
-            LOGGER.error(msg);
-            throw new FlowableRuntimeException(msg);
-        }
-
-    }
-
-
-    /**
+##### processMultiInstance
+~~~
+ /**
      * 处理并行会签
      */
     private void processMultiInstance() {
@@ -272,8 +248,11 @@ public class ActiveMultiInstanceTaskRollbackOperateStrategy extends AbstractRoll
         removeHisTask(hisTask);
     }
 
+~~~
 
-    /**
+##### 通用处理父级execution逻辑 
+~~~
+/**
      * 通用处理逻辑
      *
      * @param hisTask
@@ -316,4 +295,29 @@ public class ActiveMultiInstanceTaskRollbackOperateStrategy extends AbstractRoll
 
         return parentExecutionEntity;
     }
-}
+~~~
+
+##### 移除历史任务：
+~~~
+
+    public void existNextFinishedTask(HistoricTaskInstance hisTask) {
+
+        List<HistoricTaskInstance> list = CommandContextUtil.getHistoricTaskService().findHistoricTaskInstancesByQueryCriteria(
+                (HistoricTaskInstanceQueryImpl) new HistoricTaskInstanceQueryImpl()
+                        .processInstanceId(hisTask.getProcessInstanceId())
+                        .taskDefinitionKey(hisTask.getTaskDefinitionKey())
+                        .finished()
+                        .taskCompletedAfter(hisTask.getEndTime())
+        );
+
+        if (!list.isEmpty()) {
+            String msg = "串行会签回滚，已经具有下一线性完成任务,无法进行任务回退";
+            LOGGER.error(msg);
+            throw new FlowableRuntimeException(msg);
+        }
+
+    }
+~~~
+
+以上 完成对 上一节点任务撤回 架构设计 及 第 3 种情况 解决方案讲述。
+git地址：[https://github.com/oldguys/flowable-modeler-demo/tree/branch_with_flowable_examples](https://github.com/oldguys/flowable-modeler-demo/tree/branch_with_flowable_examples)

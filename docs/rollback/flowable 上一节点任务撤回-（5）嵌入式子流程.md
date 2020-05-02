@@ -1,43 +1,84 @@
-package com.example.oldguy.modules.examples.cmd.rollback.impl;
+###flowable 上一节点任务撤回-（5）嵌入式子流程
 
-import com.example.oldguy.modules.examples.cmd.rollback.AbstractRollbackOperateStrategy;
-import com.example.oldguy.modules.examples.cmd.rollback.RollbackConstants;
-import com.example.oldguy.modules.examples.cmd.rollback.RollbackParamsTemplate;
-import com.example.oldguy.modules.examples.exceptions.FlowableRuntimeException;
-import org.flowable.bpmn.model.SubProcess;
-import org.flowable.engine.impl.ActivityInstanceQueryImpl;
-import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
-import org.flowable.engine.impl.util.CommandContextUtil;
-import org.flowable.engine.runtime.ActivityInstance;
-import org.flowable.task.api.history.HistoricTaskInstance;
-import org.flowable.task.service.impl.HistoricTaskInstanceQueryImpl;
-import org.flowable.task.service.impl.persistence.entity.TaskEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+> **场景**：本章主要描述 下一节点 嵌入式子流程 如何进行回退操作。
+>
+> ![嵌入式子流程](https://upload-images.jianshu.io/upload_images/14387783-53554c6a77e10108.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+>
+> **上一章：**[flowable 上一节点任务撤回-（4）多重网关](https://www.jianshu.com/p/9801acf01ceb)
+> **下一章：**flowable 上一节点任务撤回-（2）会签任务（已完成）
+>  
+> **环境**：
+>   springboot：2.2.0.RELEASE
+>   flowable：6.4.2
+>
+> git地址：[https://github.com/oldguys/flowable-modeler-demo/tree/branch_with_flowable_examples](https://github.com/oldguys/flowable-modeler-demo/tree/branch_with_flowable_examples)
+>
+> 所有章节：
+> 1. [flowable 上一节点任务撤回-（1）普通节点撤回](https://www.jianshu.com/p/ee42924ed029)
+> 2. [flowable 上一节点任务撤回-（2）会签任务（已完成）](https://www.jianshu.com/p/93fc02bb31d7)
+> 2. [flowable 上一节点任务撤回-（3）会签任务（正在执行中）](https://www.jianshu.com/p/6daf767b1084)
+> 2. [标题](链接地址)
+> 2. [标题](链接地址)
+> 2. [标题](链接地址)
 
-import java.util.*;
+ ![嵌入式子流程](https://upload-images.jianshu.io/upload_images/14387783-53554c6a77e10108.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-/**
- * @ClassName: NextSubProcessRollbackOperateStrategy
- * @Author: huangrenhao
- * @Description: 下一节点是 嵌入式子流程
- * @CreateTime： 2020/4/7 0007 上午 10:28
- * @Version：
- **/
-public class NextSubProcessRollbackOperateStrategy extends AbstractRollbackOperateStrategy {
+嵌入式子流程具有一定的特殊性，操作撤回的时候，比如 ：
+1. 节点 A 进入子流程这种边界事件
+2. 子流程中的 各节点的跳转 b-1 b-2 b-3
 
-    private Logger LOGGER = LoggerFactory.getLogger(NextSubProcessRollbackOperateStrategy.class);
+与之前一样，对系统的各种数据进行分析
 
-    /**
-     * 嵌入子流程中所有节点ID集合
-     */
-    private Set<String> subProcessItemKeySet = new HashSet<>();
+![BpmnModel](https://upload-images.jianshu.io/upload_images/14387783-6edcba4578049f32.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-    private SubProcess subProcess;
+![Process 与 SubProcess 共性](https://upload-images.jianshu.io/upload_images/14387783-fe8984d7fe88d1fa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-    public NextSubProcessRollbackOperateStrategy(RollbackParamsTemplate paramsTemplate) {
-        super(paramsTemplate);
+
+![ACT_RU_EXECUTION](https://upload-images.jianshu.io/upload_images/14387783-72bee26dd010fef2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+1. 从debug数据中可以看到，SubProcess 中的节点 存在于 节点 SubProcess 中，不能直接通过 getElement 拿到
+
+2. 然后 Process和 SubProcess 都实现于接口 org.flowable.bpmn.model.FlowElementsContainer，并且调用的接口 是 FlowElementsContainer.getFlowElement(String id);
+
+所以 可以从这两处入手，进行功能编写
+
+
+##### NextSubProcessRollbackOperateStrategy: 从嵌入式子流程撤回到普通节点
+
+> 步骤：
+> 1. 如果下一节点是子流程 判定 子流程中 是否具有 已完成任务，如果具有，则不具备撤回条件。如果正常则无所谓。
+> 2. 像 之前一样的步骤，构建 Execution ，利用 Execution 生成 任务。（不过与普通任务不同 ，子流程前置 普通任务节点的 execution 已经结束，不是同一个，所以无法使用，需要根据边界子节点 父级节点 进行构建）
+> 3. 处理掉已生成的 子流程任务，另外，由上图可以看出，子流程任务 b-1 具有 顶级 execution，这个也需要进行移除，不然会导致流程无法归档。
+> 4. 清理掉相关依赖数据。
+>
+> 如果是嵌入式子流程 内部节点间处理，则处理方式基本和 普通节点的处理方式一致，只需要判断，如果 在 Process 找不到 flowElement，则在SubProcess进行找就行。所以之前的操作类直接满足效果。
+>
+
+##### 基于模板方法模式，构建编写通用 RollbackOperateStrategy.process() 操作
+~~~
+    @Override
+    public void process(CommandContext commandContext, String assignee, Map<String, Object> variables) {
+
+        this.commandContext = commandContext;
+        this.assignee = assignee;
+        this.variables = variables;
+
+        log.info("处理 existNextFinishedTask");
+        existNextFinishedTask();
+        log.info("配置任务执行人 setAssignee");
+        setAssignee();
+        log.info("处理 createExecution");
+        createExecution();
+        log.info("处理 deleteRuntimeTasks");
+        deleteRuntimeTasks();
+        log.info("处理 deleteHisActInstance");
+        deleteHisActInstance();
     }
+~~~
+
+判定是否具有已完成任务，此处需要判定标识是从 SubProcess 中获取的
+~~~
 
     @Override
     public void existNextFinishedTask() {
@@ -65,17 +106,11 @@ public class NextSubProcessRollbackOperateStrategy extends AbstractRollbackOpera
         }
 
     }
+~~~
 
-    @Override
-    public void setAssignee() {
-        // 进行任务执行人配置,之后使用全局监听出发更新
-        super.setAssignee();
-        String type = RollbackConstants.TASK_TYPE_PREFIX_KEY + paramsTemplate.getHisTask().getProcessInstanceId() + paramsTemplate.getHisTask().getTaskDefinitionKey();
-        variables.put(type, NextSubProcessRollbackOperateStrategy.class.getSimpleName());
-    }
-
-
-    @Override
+构建 Execution：主要区别在于只能通过相邻节点进行获取，不然当出现多层级网关的时候，可能会出现层级错误bug
+~~~
+  @Override
     public void createExecution() {
 
         HistoricTaskInstance hisTask = paramsTemplate.getHisTask();
@@ -104,6 +139,9 @@ public class NextSubProcessRollbackOperateStrategy extends AbstractRollbackOpera
         removeHisTask(hisTask);
     }
 
+~~~
+删除历史连线
+~~~
     @Override
     public void deleteHisActInstance() {
 
@@ -133,7 +171,9 @@ public class NextSubProcessRollbackOperateStrategy extends AbstractRollbackOpera
         ids.forEach(obj -> historyActivityInstanceMapper.delete(obj));
 
     }
-
+~~~
+删除正在进行任务
+~~~
     @Override
     public void deleteRuntimeTasks() {
         HistoricTaskInstance hisTask = paramsTemplate.getHisTask();
@@ -172,5 +212,7 @@ public class NextSubProcessRollbackOperateStrategy extends AbstractRollbackOpera
 
     }
 
+~~~
 
-}
+以上 完成对 上一节点任务撤回 架构设计 及 第 5 种情况 解决方案讲述。
+git地址：[https://github.com/oldguys/flowable-modeler-demo/tree/branch_with_flowable_examples](https://github.com/oldguys/flowable-modeler-demo/tree/branch_with_flowable_examples)
