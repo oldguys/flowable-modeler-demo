@@ -1,6 +1,6 @@
 package com.example.oldguy.examples.rollback;
 
-import com.example.oldguy.modules.examples.cmd.rollback.RollbackCmd;
+import com.example.oldguy.modules.flow.services.cmd.rollback.RollbackCmd;
 import org.flowable.engine.ManagementService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;

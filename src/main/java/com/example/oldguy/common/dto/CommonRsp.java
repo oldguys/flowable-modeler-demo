@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CommonRsp<T> {
 
-    public static CommonRsp SUCCESS = new CommonRsp();
+    public static CommonRsp SUCCESS = new CommonRsp<>();
 
     @ApiModelProperty("返回值状态")
     private Integer status = 0;
@@ -25,7 +25,19 @@ public class CommonRsp<T> {
     @ApiModelProperty("返回数据")
     private T data;
 
+    @ApiModelProperty("错误信息")
+    private String errMsg;
+
+    @ApiModelProperty("详细错误信息")
+    private String detailErrMsg;
+
     public CommonRsp(T data) {
         this.data = data;
+    }
+
+    public CommonRsp(ErrorCode code, String detailErrMsg) {
+        this.status = code.getCode();
+        this.errMsg = code.getMsg();
+        this.detailErrMsg = detailErrMsg;
     }
 }

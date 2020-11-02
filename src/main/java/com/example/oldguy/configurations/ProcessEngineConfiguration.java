@@ -1,8 +1,8 @@
 package com.example.oldguy.configurations;
 
-import com.example.oldguy.modules.examples.functions.VariableMethod01ExpressionFunction;
-import com.example.oldguy.modules.examples.functions.VariableMethod02ExpressionFunction;
-import com.example.oldguy.modules.examples.functions.VariableQueryExpressionFunction;
+import com.example.oldguy.modules.flow.services.functions.VariableMethod01ExpressionFunction;
+import com.example.oldguy.modules.flow.services.functions.VariableMethod02ExpressionFunction;
+import com.example.oldguy.modules.flow.services.functions.VariableQueryExpressionFunction;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.slf4j.Logger;
