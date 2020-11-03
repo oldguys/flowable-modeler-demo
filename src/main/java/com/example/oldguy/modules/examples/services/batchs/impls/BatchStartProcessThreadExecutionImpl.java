@@ -1,7 +1,7 @@
 package com.example.oldguy.modules.examples.services.batchs.impls;
 
 import com.example.oldguy.common.utils.SpringContextUtils;
-import com.example.oldguy.modules.examples.dto.batchs.StartProcessInstanceItem;
+import com.example.oldguy.modules.examples.dto.batchs.BatchStartProcessInstanceItem;
 import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchStartProcessInstanceRsp;
 import com.example.oldguy.modules.flow.services.batchs.ThreadExecution;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class BatchStartProcessThreadExecutionImpl implements ThreadExecution {
     @Transactional(rollbackFor = Exception.class)
     public void threadExecute(List list) {
 
-        List<StartProcessInstanceItem> itemList = list;
+        List<BatchStartProcessInstanceItem> itemList = list;
         itemList.forEach(obj -> {
             ProcessInstance pi = runtimeService.startProcessInstanceByKey(obj.getKey(), obj.getData());
             records.add(new BatchStartProcessInstanceRsp.ProcessInstanceItem(obj.getSequenceNo(), pi.getProcessInstanceId()));

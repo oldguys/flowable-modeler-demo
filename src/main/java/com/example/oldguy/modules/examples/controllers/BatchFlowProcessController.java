@@ -1,7 +1,9 @@
 package com.example.oldguy.modules.examples.controllers;
 
 import com.example.oldguy.common.dto.CommonRsp;
+import com.example.oldguy.modules.examples.dto.batchs.req.BatchCompleteTaskReq;
 import com.example.oldguy.modules.examples.dto.batchs.req.BatchStartProcessInstanceReq;
+import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchCompleteTaskRsp;
 import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchStartProcessInstanceRsp;
 import com.example.oldguy.modules.examples.services.batchs.BatchFlowService;
 import io.swagger.annotations.Api;
@@ -32,6 +34,12 @@ public class BatchFlowProcessController {
     @PostMapping("instance/start")
     public CommonRsp<BatchStartProcessInstanceRsp> batchStartProcessInstance(@RequestBody BatchStartProcessInstanceReq req){
         return new CommonRsp<>(batchFlowService.batchStartProcessInstance(req));
+    }
+
+    @ApiOperation("批量发起流程")
+    @PostMapping("task/complete")
+    public CommonRsp<BatchCompleteTaskRsp> batchCompleteTasks(@RequestBody BatchCompleteTaskReq req){
+        return new CommonRsp<>(batchFlowService.batchCompleteTasks(req));
     }
 
 }

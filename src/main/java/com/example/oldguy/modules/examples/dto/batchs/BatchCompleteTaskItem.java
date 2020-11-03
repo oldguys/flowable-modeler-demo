@@ -6,19 +6,19 @@ import lombok.Data;
 import java.util.Map;
 
 /**
- * @ClassName: StartProcessInstanceItem
+ * @ClassName: BatchCompleteTaskItem
  * @Author: huangrenhao
  * @Description:
- * @CreateTime： 2020/10/30 0030 下午 3:09
+ * @CreateTime： 2020/11/2 0002 下午 5:12
  * @Version：
  **/
 @Data
 @AllArgsConstructor
-public class StartProcessInstanceItem {
+public class BatchCompleteTaskItem {
 
-    private String sequenceNo;
+    private String taskId;
 
-    private String key;
+    private String comment;
 
     private Map<String, Object> data;
 }

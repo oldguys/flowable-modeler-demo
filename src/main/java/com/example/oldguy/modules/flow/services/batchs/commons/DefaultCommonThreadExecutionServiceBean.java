@@ -15,9 +15,10 @@ import java.util.List;
  * @Version：
  **/
 @Service
-@Transactional(rollbackFor = Exception.class)
 public class DefaultCommonThreadExecutionServiceBean implements CommonThreadExecutionService {
+
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int executeBatch(ThreadExecution threadExecution, List sequence) {
         threadExecution.threadExecute(sequence);
         return 0;

@@ -1,6 +1,8 @@
 package com.example.oldguy.modules.examples.services.batchs;
 
+import com.example.oldguy.modules.examples.dto.batchs.req.BatchCompleteTaskReq;
 import com.example.oldguy.modules.examples.dto.batchs.req.BatchStartProcessInstanceReq;
+import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchCompleteTaskRsp;
 import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchStartProcessInstanceRsp;
 
 /**
@@ -18,4 +20,11 @@ public interface BatchFlowService {
      * @return
      */
     BatchStartProcessInstanceRsp batchStartProcessInstance(BatchStartProcessInstanceReq req);
+
+    /**
+     *  批量完成任务接口
+     * @param req
+     * @return
+     */
+    BatchCompleteTaskRsp batchCompleteTasks(BatchCompleteTaskReq req);
 }

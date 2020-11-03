@@ -1,9 +1,13 @@
 package com.example.oldguy.modules.examples.services.batchs;
 
-import com.example.oldguy.modules.examples.dto.batchs.StartProcessInstanceItem;
+import com.example.oldguy.modules.examples.dto.batchs.BatchCompleteTaskItem;
+import com.example.oldguy.modules.examples.dto.batchs.BatchStartProcessInstanceItem;
+import com.example.oldguy.modules.examples.dto.batchs.req.BatchCompleteTaskReq;
 import com.example.oldguy.modules.examples.dto.batchs.req.BatchStartProcessInstanceReq;
+import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchCompleteTaskRsp;
 import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchStartProcessInstanceRsp;
 import com.example.oldguy.modules.examples.services.batchs.impls.BatchStartProcessThreadExecutionImpl;
+import com.example.oldguy.modules.examples.services.batchs.impls.BatchTaskCompleteTaskWithSingleTransactionThreadExecutionImpl;
 import com.example.oldguy.modules.flow.services.batchs.ThreadExecution;
 import com.example.oldguy.modules.flow.services.batchs.commons.FlowThreadPoolExecutor;
 import org.springframework.stereotype.Service;
@@ -28,11 +32,11 @@ public class BatchFlowServiceImpl implements BatchFlowService {
     @Transactional(rollbackFor = Exception.class)
     public BatchStartProcessInstanceRsp batchStartProcessInstance(BatchStartProcessInstanceReq req) {
 
-        List<StartProcessInstanceItem> toDoSequence = new ArrayList<>();
+        List<BatchStartProcessInstanceItem> toDoSequence = new ArrayList<>();
 
         req.getItemList().stream()
                 .forEach(obj -> obj.getSequence().forEach(
-                        item -> toDoSequence.add(new StartProcessInstanceItem(item, obj.getKey(), obj.getData())
+                        item -> toDoSequence.add(new BatchStartProcessInstanceItem(item, obj.getKey(), obj.getData())
                         )
                 ));
 
@@ -41,5 +45,23 @@ public class BatchFlowServiceImpl implements BatchFlowService {
         FlowThreadPoolExecutor.executeTask(threadExecution, toDoSequence, 100);
 
         return new BatchStartProcessInstanceRsp(result);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BatchCompleteTaskRsp batchCompleteTasks(BatchCompleteTaskReq req) {
+
+        List<BatchCompleteTaskItem> toDoSequence = new ArrayList<>();
+
+        req.getItemList().forEach(obj ->
+            obj.getTaskIds().forEach(item -> toDoSequence.add(new BatchCompleteTaskItem(item, obj.getData())))
+        );
+
+        List<BatchCompleteTaskRsp.CompleteTaskItem> result = new Vector<>();
+        ThreadExecution threadExecution = new BatchTaskCompleteTaskWithSingleTransactionThreadExecutionImpl(result);
+        FlowThreadPoolExecutor.executeTask(threadExecution, toDoSequence, 100);
+
+
+        return new BatchCompleteTaskRsp(result);
     }
 }
