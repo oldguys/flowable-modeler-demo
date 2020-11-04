@@ -7,9 +7,11 @@ import com.example.oldguy.modules.examples.dto.batchs.req.BatchStartProcessInsta
 import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchCompleteTaskRsp;
 import com.example.oldguy.modules.examples.dto.batchs.rsp.BatchStartProcessInstanceRsp;
 import com.example.oldguy.modules.examples.services.batchs.impls.BatchStartProcessThreadExecutionImpl;
+import com.example.oldguy.modules.examples.services.batchs.impls.BatchTaskCompleteTaskWithBatchTransactionThreadExecutionImpl;
 import com.example.oldguy.modules.examples.services.batchs.impls.BatchTaskCompleteTaskWithSingleTransactionThreadExecutionImpl;
 import com.example.oldguy.modules.flow.services.batchs.ThreadExecution;
 import com.example.oldguy.modules.flow.services.batchs.commons.FlowThreadPoolExecutor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ import java.util.Vector;
  * @CreateTime： 2020/10/30 0030 下午 2:26
  * @Version：
  **/
+@Slf4j
 @Service
 public class BatchFlowServiceImpl implements BatchFlowService {
 
@@ -41,8 +44,14 @@ public class BatchFlowServiceImpl implements BatchFlowService {
                 ));
 
         List<BatchStartProcessInstanceRsp.ProcessInstanceItem> result = new Vector<>();
-        ThreadExecution threadExecution = new BatchStartProcessThreadExecutionImpl(result);
-        FlowThreadPoolExecutor.executeTask(threadExecution, toDoSequence, 100);
+        try {
+            ThreadExecution threadExecution = new BatchStartProcessThreadExecutionImpl(result);
+            FlowThreadPoolExecutor.executeTask(threadExecution, toDoSequence, 5);
+        }catch (Exception e){
+            log.info("顶级方法");
+            throw e;
+        }
+
 
         return new BatchStartProcessInstanceRsp(result);
     }
@@ -54,13 +63,19 @@ public class BatchFlowServiceImpl implements BatchFlowService {
         List<BatchCompleteTaskItem> toDoSequence = new ArrayList<>();
 
         req.getItemList().forEach(obj ->
-            obj.getTaskIds().forEach(item -> toDoSequence.add(new BatchCompleteTaskItem(item, obj.getData())))
+                obj.getTaskIds().forEach(item -> toDoSequence.add(new BatchCompleteTaskItem(item, obj.getComment(), obj.getData())))
         );
 
         List<BatchCompleteTaskRsp.CompleteTaskItem> result = new Vector<>();
-        ThreadExecution threadExecution = new BatchTaskCompleteTaskWithSingleTransactionThreadExecutionImpl(result);
-        FlowThreadPoolExecutor.executeTask(threadExecution, toDoSequence, 100);
+        ThreadExecution threadExecution;
+        if (req.getTransactionalBatchIs()) {
+            threadExecution = new BatchTaskCompleteTaskWithBatchTransactionThreadExecutionImpl(result);
+        } else {
+            threadExecution = new BatchTaskCompleteTaskWithSingleTransactionThreadExecutionImpl(result);
+        }
 
+        log.info("threadExecution:" + threadExecution.getClass());
+        FlowThreadPoolExecutor.executeTask(threadExecution, toDoSequence, 5);
 
         return new BatchCompleteTaskRsp(result);
     }

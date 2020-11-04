@@ -85,21 +85,26 @@ public class FlowThreadPoolExecutor {
             futures.add(executorService.submit(new DefaultPoolTask(execution, items)));
         }
 
-        for (Future future : futures) {
-            try {
+        try {
+            for (Future future : futures) {
+
                 future.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-                if (e.getCause() instanceof FlowableException) {
-                    Throwable exception = e.getCause();
-                    if(exception.getCause() instanceof PropertyNotFoundException){
-                        throw new FlowRuntimeException(ErrorCode.FLOW_EL_PROPERTY_NOT_FOUND_EXCEPTION, "批处理异常：" + exception.getMessage());
-                    }
-                    throw new FlowRuntimeException(ErrorCode.FLOW_EXCEPTION, "批处理异常：" + exception.getMessage());
-                }
-                throw new FlowRuntimeException(ErrorCode.FLOW_BATCH_EXCEPTION, "批处理异常：" + e.getMessage());
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (e.getCause() instanceof FlowableException) {
+                Throwable exception = e.getCause();
+                if (exception.getCause() instanceof PropertyNotFoundException) {
+                    throw new FlowRuntimeException(ErrorCode.FLOW_EL_PROPERTY_NOT_FOUND_EXCEPTION, "批处理异常：" + exception.getMessage());
+                }
+                throw new FlowRuntimeException(ErrorCode.FLOW_EXCEPTION, "批处理异常：" + exception.getMessage());
+            }
+            throw new FlowRuntimeException(ErrorCode.FLOW_BATCH_EXCEPTION, "批处理异常：" + e.getMessage());
+        } finally {
+            executorService.shutdown();
+//            executorService.shutdownNow();
         }
+
 
         return true;
     }

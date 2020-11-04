@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
+
 
 /**
  * @ClassName: BatchFlowProcessController
@@ -32,13 +34,13 @@ public class BatchFlowProcessController {
 
     @ApiOperation("批量发起流程")
     @PostMapping("instance/start")
-    public CommonRsp<BatchStartProcessInstanceRsp> batchStartProcessInstance(@RequestBody BatchStartProcessInstanceReq req){
+    public CommonRsp<BatchStartProcessInstanceRsp> batchStartProcessInstance(@Valid @RequestBody BatchStartProcessInstanceReq req){
         return new CommonRsp<>(batchFlowService.batchStartProcessInstance(req));
     }
 
-    @ApiOperation("批量发起流程")
+    @ApiOperation("批量完成任务")
     @PostMapping("task/complete")
-    public CommonRsp<BatchCompleteTaskRsp> batchCompleteTasks(@RequestBody BatchCompleteTaskReq req){
+    public CommonRsp<BatchCompleteTaskRsp> batchCompleteTasks(@Valid @RequestBody BatchCompleteTaskReq req){
         return new CommonRsp<>(batchFlowService.batchCompleteTasks(req));
     }
 

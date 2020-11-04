@@ -3,6 +3,7 @@ package com.example.oldguy.modules.flow.services.batchs.commons;
 import com.example.oldguy.common.utils.SpringContextUtils;
 import com.example.oldguy.modules.flow.services.batchs.CommonThreadExecutionService;
 import com.example.oldguy.modules.flow.services.batchs.ThreadExecution;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 

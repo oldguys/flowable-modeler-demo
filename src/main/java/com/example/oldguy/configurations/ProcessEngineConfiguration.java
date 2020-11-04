@@ -7,6 +7,7 @@ import com.example.oldguy.modules.flow.services.functions.VariableQueryExpressio
 import lombok.extern.slf4j.Slf4j;
 import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
 import org.flowable.common.engine.api.delegate.event.FlowableEventListener;
+import org.flowable.engine.impl.db.DbIdGenerator;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.slf4j.Logger;
@@ -43,6 +44,9 @@ public class ProcessEngineConfiguration implements EngineConfigurationConfigurer
         initExpressFunction(processEngineConfiguration);
         // 配置全局监听器
         initGlobalListeners(processEngineConfiguration);
+
+        // 更改ID 策略
+        processEngineConfiguration.setIdGenerator(new DbIdGenerator());
     }
 
     private void initGlobalListeners(SpringProcessEngineConfiguration processEngineConfiguration) {

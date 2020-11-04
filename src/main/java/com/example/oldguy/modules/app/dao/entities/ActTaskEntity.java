@@ -20,7 +20,7 @@ import java.util.Map;
  **/
 @Data
 @TableName("ACT_RU_TASK")
-public class ActTaskEntity  implements TaskInfo {
+public class ActTaskEntity implements TaskInfo {
 
     @TableId("ID_")
     private String id;
@@ -108,6 +108,12 @@ public class ActTaskEntity  implements TaskInfo {
 
     @TableField("IS_COUNT_ENABLED_")
     private boolean countEnabled;
+
+    @Override
+    public int getPriority() {
+        return priority;
+    }
+
 
     @Override
     public Date getDueDate() {
