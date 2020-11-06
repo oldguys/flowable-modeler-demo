@@ -52,7 +52,7 @@ public class TaskActionLog {
     private Date endTime;
 
     public TaskActionLog(TaskInfo task, taskActionType type, String commentId) {
-        setTaskId(task.getTenantId());
+        setTaskId(task.getId());
         setTaskName(task.getName());
         setStartTime(task.getCreateTime());
 

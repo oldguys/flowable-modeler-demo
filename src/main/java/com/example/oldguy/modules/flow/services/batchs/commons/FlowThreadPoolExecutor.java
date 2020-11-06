@@ -73,6 +73,13 @@ public class FlowThreadPoolExecutor {
         if (toDoList.size() % groupSize > 0) {
             group += 1;
         }
+
+        if (group > corePoolSize) {
+            throw new FlowRuntimeException("主线程等待所有子线程完成，由于 group > 核心线程数，会进入死锁状态");
+        }
+
+        BatchTransactionFlag flag = new BatchTransactionFlag(group);
+
         for (int i = 0; i < group; i++) {
 
             int startIndex = i * groupSize;
@@ -82,8 +89,10 @@ public class FlowThreadPoolExecutor {
             }
             List items = toDoList.subList(startIndex, endIndex);
 
-            futures.add(executorService.submit(new DefaultPoolTask(execution, items)));
+            futures.add(executorService.submit(new DefaultPoolTask(execution, items, flag)));
         }
+
+        flag.end();
 
         try {
             for (Future future : futures) {

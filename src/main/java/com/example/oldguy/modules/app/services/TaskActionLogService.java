@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
+
 /**
  * @ClassName: TaskActionLogService
  * @Author: huangrenhao
@@ -17,12 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TaskActionLogService {
 
-    @Autowired
+    @Resource
     private TaskActionLogMapper taskActionLogMapper;
 
     @Transactional(rollbackFor = Exception.class)
     public void persist(TaskInfo taskInfo, TaskActionLog.taskActionType type, String commentId) {
         TaskActionLog log = new TaskActionLog(taskInfo, type, commentId);
         taskActionLogMapper.insert(log);
+
     }
 }
