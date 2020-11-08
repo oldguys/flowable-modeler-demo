@@ -9,6 +9,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -18,7 +19,7 @@ import java.util.concurrent.Callable;
  * @CreateTime： 2020/10/29 0029 下午 2:44
  * @Version：
  **/
-public class DefaultPoolTask implements Runnable {
+public class BatchTransactionPoolTask implements Runnable {
 
     private final ThreadExecution threadExecution;
 
@@ -26,20 +27,20 @@ public class DefaultPoolTask implements Runnable {
 
     private final CommonThreadExecutionService commonThreadExecutionService;
 
-    private final List<TransactionStatus> transactionStatuses;
+    private final Map<Long, TransactionStatus> longTransactionStatusMap;
 
     private final BatchTransactionFlag flag;
 
-    public DefaultPoolTask(ThreadExecution threadExecution, List<?> list, List<TransactionStatus> transactionStatuses, BatchTransactionFlag flag) {
+    public BatchTransactionPoolTask(ThreadExecution threadExecution, List<?> list, Map<Long, TransactionStatus> longTransactionStatusMap, BatchTransactionFlag flag) {
         this.threadExecution = threadExecution;
         this.list = list;
-        this.transactionStatuses = transactionStatuses;
+        this.longTransactionStatusMap = longTransactionStatusMap;
         this.commonThreadExecutionService = SpringContextUtils.getBean(CommonThreadExecutionService.class);
         this.flag = flag;
     }
 
     @Override
     public void run() {
-        commonThreadExecutionService.executeBatch(threadExecution, list, transactionStatuses, flag);
+        commonThreadExecutionService.executeBatch(threadExecution, list, longTransactionStatusMap, flag);
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.transaction.support.*;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @ClassName: DefaultCommonThreadExecutionServiceImpl
@@ -30,25 +31,19 @@ public class DefaultCommonThreadExecutionServiceBean implements CommonThreadExec
     private DataSourceTransactionManager transactionManager;
 
     @Override
-//    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
-    public int executeBatch(ThreadExecution threadExecution, List sequence, List<TransactionStatus> transactionStatuses, BatchTransactionFlag flag) {
+    public int executeBatch(ThreadExecution threadExecution, List sequence, Map<Long, TransactionStatus> longTransactionStatusMap, BatchTransactionFlag flag) {
 
-//        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
-//        TransactionStatus transactionStatus = transactionManager.getTransaction(definition);
-        synchronized (flag){
-
+        synchronized (flag) {
             TransactionStatus transactionStatus = transactionManager.getTransaction(TransactionDefinition.withDefaults());
-            transactionStatuses.add(transactionStatus);
-            flag.getCompleteThreads().incrementAndGet();
+            longTransactionStatusMap.put(Thread.currentThread().getId(), transactionStatus);
+            try {
+                threadExecution.threadExecute(sequence);
+                flag.getSuccessThreads().incrementAndGet();
+            } finally {
+                flag.getCompleteThreads().incrementAndGet();
+                log.info("完成任务：" + Thread.currentThread().getName());
+            }
         }
-
-        try {
-            threadExecution.threadExecute(sequence);
-        } finally {
-            log.info("完成任务：" + Thread.currentThread().getName());
-        }
-//        transactionManager.commit(transactionStatus);
-
         return 0;
     }
 }

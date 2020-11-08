@@ -4,6 +4,7 @@ import com.example.oldguy.modules.flow.services.batchs.commons.BatchTransactionF
 import org.springframework.transaction.TransactionStatus;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @ClassName: CommonThreadExecutionService
@@ -21,5 +22,5 @@ public interface CommonThreadExecutionService {
      * @param sequence
      * @return
      */
-    int executeBatch(ThreadExecution threadExecution, List sequence, List<TransactionStatus> transactionStatuses, BatchTransactionFlag flag);
+    int executeBatch(ThreadExecution threadExecution, List sequence, Map<Long, TransactionStatus> longTransactionStatusMap, BatchTransactionFlag flag);
 }

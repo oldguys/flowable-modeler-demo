@@ -5,22 +5,16 @@ import com.example.oldguy.common.utils.SpringContextUtils;
 import com.example.oldguy.modules.flow.exceptions.FlowRuntimeException;
 import com.example.oldguy.modules.flow.services.batchs.ThreadExecution;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.zaxxer.hikari.HikariConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.impl.identity.Authentication;
 import org.flowable.common.engine.impl.javax.el.PropertyNotFoundException;
 import org.flowable.ui.common.security.SecurityUtils;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.JdbcTransactionObjectSupport;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.*;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.*;
 
 /**
@@ -34,19 +28,20 @@ import java.util.concurrent.*;
 @Slf4j
 public class FlowThreadPoolExecutor {
 
-    public static boolean executeTask(ThreadExecution execution, List toDoList, int groupSize) {
+    public static boolean executeTask(ThreadExecution execution, List toDoList, int groupSize, boolean batchTransaction) {
         int corePoolSize = 10;
         int maximumPoolSize = 10;
         long keepAliveTime = 3;
-        return executeTask(corePoolSize, maximumPoolSize, keepAliveTime, execution, toDoList, groupSize);
+        return executeTask(corePoolSize, maximumPoolSize, keepAliveTime, execution, toDoList, groupSize, batchTransaction);
     }
 
     public static boolean executeTask(int corePoolSize,
                                       int maximumPoolSize,
                                       long keepAliveTime,
                                       ThreadExecution execution,
-                                      List toDoList,
-                                      int groupSize
+                                      List<?> toDoList,
+                                      int groupSize,
+                                      boolean batchTransaction
     ) {
         if (toDoList.isEmpty()) {
             log.warn("空任务组,不需要进行处理");
@@ -55,37 +50,42 @@ public class FlowThreadPoolExecutor {
 
         TimeUnit unit = TimeUnit.SECONDS;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>();
-        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("flow-pool-%d")
-                .build();
+
+        int group;
+
+        if (batchTransaction) {
+            if (toDoList.size() <= corePoolSize) {
+                group = 1;
+                groupSize = toDoList.size();
+            } else {
+                groupSize = toDoList.size() / corePoolSize;
+                if (toDoList.size() % corePoolSize > 1) {
+                    corePoolSize += 1;
+                    maximumPoolSize += 1;
+                }
+                group = corePoolSize;
+            }
+        } else {
+            group = toDoList.size() / groupSize;
+            if (toDoList.size() % groupSize > 0) {
+                group += 1;
+            }
+        }
 
 
-        String currentUserId = SecurityUtils.getCurrentUserId();
+        // 事务集合
+        BatchTransactionFlag flag = new BatchTransactionFlag(group, batchTransaction, toDoList);
 
-        ThreadPoolExecutor executorService = new ThreadPoolExecutor(
+        ThreadPoolExecutor executorService = createThreadPoolExecutorInstance(
                 corePoolSize,
                 maximumPoolSize,
                 keepAliveTime,
                 unit,
                 workQueue,
-                namedThreadFactory) {
-            @Override
-            protected void beforeExecute(Thread t, Runnable r) {
-                Authentication.setAuthenticatedUserId(currentUserId);
-            }
-        };
+                flag);
 
 
-        int group = toDoList.size() / groupSize;
-        if (toDoList.size() % groupSize > 0) {
-            group += 1;
-        }
-
-        // 事务集合
-        List<TransactionStatus> transactionStatuses = new Vector<>();
         List<Future<?>> futures = new ArrayList<>();
-
-        BatchTransactionFlag flag = new BatchTransactionFlag(group);
 
         for (int i = 0; i < group; i++) {
 
@@ -95,66 +95,28 @@ public class FlowThreadPoolExecutor {
                 endIndex = toDoList.size();
             }
             List<?> items = toDoList.subList(startIndex, endIndex);
-
-            futures.add(executorService.submit(new DefaultPoolTask(execution, items, transactionStatuses, flag)));
+            if (batchTransaction) {
+                futures.add(executorService.submit(new BatchTransactionPoolTask(execution, items, flag.getLongTransactionStatusMap(), flag)));
+            } else {
+                futures.add(executorService.submit(new SingleTransactionPoolTask(execution, items, flag)));
+            }
         }
         try {
-//            while (executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-//                log.info("线程未结束");
-//            }
 
             while (flag.getCompleteThreads().get() != flag.getGroupSize()) {
-                Thread.sleep(100);
-                log.info("等待子线程：getGroupSize:" + flag.getGroupSize() + "\tgetCompleteThreads：" + flag.getCompleteThreads().get());
-                log.info("开启事务个数：" + transactionStatuses.size());
+                Thread.sleep(1000);
+                log.info("等待子线程：getGroupSize:" + flag.getGroupSize() + "\t getCompleteThreads：" + flag.getCompleteThreads().get() + "\t pageSize:" + groupSize);
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        boolean completeSuccessIs = false;
-
-//        log.info("没有出现任何异常,进行事务提交");
-//        transactionStatuses.forEach(obj -> {
-//
-//            DefaultTransactionStatus status = (DefaultTransactionStatus) obj;
-//            JdbcTransactionObjectSupport transaction = (JdbcTransactionObjectSupport) status.getTransaction();
-//
-//            if (obj.isCompleted()) {
-//                log.info("事务已经提交");
-//            } else {
-//                log.info("主线程提交事务");
-//
-//                try {
-//                    transaction.getConnectionHolder().getConnection().commit();
-//                } catch (SQLException e) {
-//                    e.printStackTrace();
-//                    throw new FlowRuntimeException(ErrorCode.THREAD_POOL_EXECUTOR_SPRING_TX_EXCEPTION, "批处理异常：" + e.getMessage());
-//                }
-//            }
-//        });
-
         try {
             for (Future<?> future : futures) {
                 future.get();
             }
-            completeSuccessIs = true;
         } catch (Exception e) {
             e.printStackTrace();
-
-//            log.error("子线程出现任何异常,进行事务回滚");
-//            transactionStatuses.forEach(obj -> {
-//
-//                DefaultTransactionStatus status = (DefaultTransactionStatus) obj;
-//                JdbcTransactionObjectSupport transaction = (JdbcTransactionObjectSupport) status.getTransaction();
-//                try {
-//                    transaction.getConnectionHolder().getConnection().rollback();
-//                } catch (SQLException ex) {
-//                    ex.printStackTrace();
-//                    throw new FlowRuntimeException(ErrorCode.THREAD_POOL_EXECUTOR_SPRING_TX_EXCEPTION, "批处理异常：" + e.getMessage());
-//                }
-//            });
-
 
             if (e.getCause() instanceof FlowableException) {
                 Throwable exception = e.getCause();
@@ -167,28 +129,64 @@ public class FlowThreadPoolExecutor {
         } finally {
             executorService.shutdown();
 
-            for (TransactionStatus transactionStatus : transactionStatuses) {
-                DefaultTransactionStatus status = (DefaultTransactionStatus) transactionStatus;
-                JdbcTransactionObjectSupport transaction = (JdbcTransactionObjectSupport) status.getTransaction();
-
-                try {
-                    if (completeSuccessIs){
-                        transaction.getConnectionHolder().getConnection().commit();
-                    }else {
-                        transaction.getConnectionHolder().getConnection().rollback();
-                    }
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    throw new FlowRuntimeException(ErrorCode.THREAD_POOL_EXECUTOR_SPRING_TX_EXCEPTION, "批处理异常：" + e.getMessage());
-                }
-                transaction.getConnectionHolder().clear();
-            }
-
         }
 
-
         return true;
+    }
+
+    private static ThreadPoolExecutor createThreadPoolExecutorInstance(int corePoolSize,
+                                                                       int maximumPoolSize,
+                                                                       long keepAliveTime,
+                                                                       TimeUnit unit,
+                                                                       BlockingQueue<Runnable> workQueue,
+                                                                       BatchTransactionFlag flag
+    ) {
+
+        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("flow-pool-%d")
+                .build();
+
+        String currentUserId = SecurityUtils.getCurrentUserId();
+        DataSourceTransactionManager transactionManager = SpringContextUtils.getBean(DataSourceTransactionManager.class);
+
+
+        return new ThreadPoolExecutor(
+                corePoolSize,
+                maximumPoolSize,
+                keepAliveTime,
+                unit,
+                workQueue,
+                namedThreadFactory) {
+            @Override
+            protected void beforeExecute(Thread t, Runnable r) {
+                Authentication.setAuthenticatedUserId(currentUserId);
+            }
+
+            @Override
+            protected void afterExecute(Runnable r, Throwable t) {
+
+                if (flag.isBatchTransaction()) {
+
+                    try {
+                        while (flag.getCompleteThreads().get() != flag.getGroupSize()) {
+                            log.info(Thread.currentThread().getName() + " 等待主线程：getGroupSize:" + flag.getGroupSize() + "\tgetCompleteThreads：" + flag.getCompleteThreads().get());
+                            log.info("开启事务个数：" + flag.getLongTransactionStatusMap().size());
+                            Thread.sleep(1000);
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    TransactionStatus status = flag.getLongTransactionStatusMap().get(Thread.currentThread().getId());
+                    if (flag.getSuccessThreads().get() == flag.getCompleteThreads().get()) {
+                        log.info(Thread.currentThread().getName() + ":全部执行成功,提交事务");
+                        transactionManager.commit(status);
+                    } else {
+                        log.info(Thread.currentThread().getName() + ":具有线程执行失败,回滚事务");
+                        transactionManager.rollback(status);
+                    }
+                }
+            }
+        };
     }
 
 }
