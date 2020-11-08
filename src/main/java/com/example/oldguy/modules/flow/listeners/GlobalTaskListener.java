@@ -23,7 +23,7 @@ public class GlobalTaskListener implements FlowableEventListener {
 
     @Override
     public void onEvent(FlowableEvent event) {
-        log.info("进行全局任务");
+//        log.info("进行全局任务");
         if (FlowableEngineEventType.TASK_CREATED.name().equals(event.getType().name())) {
 
         } else if (FlowableEngineEventType.TASK_COMPLETED.name().equals(event.getType().name())) {

@@ -26,7 +26,12 @@ public enum ErrorCode {
     /**
      * 流程条件表达式参数不完整
      */
-    FLOW_EL_PROPERTY_NOT_FOUND_EXCEPTION(10003,"流程条件表达式参数不完整！")
+    FLOW_EL_PROPERTY_NOT_FOUND_EXCEPTION(10003,"流程条件表达式参数不完整！"),
+
+    /**
+     *  线程池事务提交失败
+     */
+    THREAD_POOL_EXECUTOR_SPRING_TX_EXCEPTION(10004,"线程池事务提交失败！"),
 
 
     ;

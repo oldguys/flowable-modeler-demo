@@ -32,7 +32,7 @@ public class BatchFlowServiceImpl implements BatchFlowService {
 
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+//    @Transactional(rollbackFor = Exception.class)
     public BatchStartProcessInstanceRsp batchStartProcessInstance(BatchStartProcessInstanceReq req) {
 
         List<BatchStartProcessInstanceItem> toDoSequence = new ArrayList<>();
@@ -46,9 +46,10 @@ public class BatchFlowServiceImpl implements BatchFlowService {
         List<BatchStartProcessInstanceRsp.ProcessInstanceItem> result = new Vector<>();
         try {
             ThreadExecution threadExecution = new BatchStartProcessThreadExecutionImpl(result);
-            FlowThreadPoolExecutor.executeTask(threadExecution, toDoSequence, 5);
+            FlowThreadPoolExecutor.executeTask(threadExecution, toDoSequence, 100);
         }catch (Exception e){
             log.info("顶级方法");
+            e.printStackTrace();
             throw e;
         }
 

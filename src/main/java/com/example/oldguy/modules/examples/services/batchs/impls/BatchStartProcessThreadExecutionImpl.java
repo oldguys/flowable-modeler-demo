@@ -7,6 +7,7 @@ import com.example.oldguy.modules.flow.services.batchs.ThreadExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.runtime.ProcessInstance;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -31,7 +32,6 @@ public class BatchStartProcessThreadExecutionImpl implements ThreadExecution {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void threadExecute(List list) {
 
         List<BatchStartProcessInstanceItem> itemList = list;

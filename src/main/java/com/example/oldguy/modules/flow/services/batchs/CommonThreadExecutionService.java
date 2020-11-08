@@ -1,5 +1,8 @@
 package com.example.oldguy.modules.flow.services.batchs;
 
+import com.example.oldguy.modules.flow.services.batchs.commons.BatchTransactionFlag;
+import org.springframework.transaction.TransactionStatus;
+
 import java.util.List;
 
 /**
@@ -13,9 +16,10 @@ public interface CommonThreadExecutionService {
 
     /**
      * 批处理
+     *
      * @param threadExecution
      * @param sequence
      * @return
      */
-    int executeBatch(ThreadExecution threadExecution, List sequence);
+    int executeBatch(ThreadExecution threadExecution, List sequence, List<TransactionStatus> transactionStatuses, BatchTransactionFlag flag);
 }

@@ -1,6 +1,10 @@
 logging:
   level:
     org.flowable.ui.modeler.rest.app: debug
+    com.example.oldguy: debug
+    org.springframework.transaction: debug
+    com.zaxxer.hikari: debug
+
 #    root: debug
 server:
   port: 8088
@@ -12,8 +16,12 @@ spring:
     password: root
     url: jdbc:mysql://127.0.0.1:3306/flowable-modeler-demo?useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
     driver-class-name: com.mysql.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 15
   application:
     name: flowable-modeler-demo
+
 
 
 mybatis-plus:
