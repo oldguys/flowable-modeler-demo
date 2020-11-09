@@ -76,7 +76,7 @@ public class FlowThreadPoolExecutor {
         // 事务集合
         BatchTransactionFlag flag = new BatchTransactionFlag(group, batchTransaction, toDoList);
 
-        ThreadPoolExecutor executorService = createThreadPoolExecutorInstance(
+        ExecutorService executorService = createThreadPoolExecutorInstance(
                 corePoolSize,
                 maximumPoolSize,
                 keepAliveTime,

@@ -15,5 +15,5 @@ public interface ThreadExecution {
      *  处理线程任务
      * @param list
      */
-    void threadExecute(List list);
+    void threadExecute(List<?> list);
 }

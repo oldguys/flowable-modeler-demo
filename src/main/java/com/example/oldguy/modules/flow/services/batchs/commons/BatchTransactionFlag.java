@@ -22,7 +22,7 @@ public class BatchTransactionFlag {
 
     private final int groupSize;
 
-    private boolean batchTransaction = false;
+    private boolean batchTransaction;
 
     private Map<Long, TransactionStatus> longTransactionStatusMap;
 
