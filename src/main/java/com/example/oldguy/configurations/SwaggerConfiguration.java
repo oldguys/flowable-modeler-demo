@@ -49,8 +49,6 @@ public class SwaggerConfiguration {
         return new ApiInfoBuilder()
                 .title(appName)
                 .description("swagger-bootstrap-ui")
-//                .termsOfServiceUrl("http://localhost:8999/")
-//                .contact("developer@mail.com")
                 .version("1.0")
                 .build();
     }
